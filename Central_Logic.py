@@ -12,7 +12,14 @@ from Batch_Recipes import Device_Manager
 from Batch_Recipes import devices_info
 from Par_and_Attr_Recipes import param_path
 from Par_and_Attr_Recipes import saved_info
+from Server_Logic import Server_Logic
+from Initialization_Handler import Initialization_Handler
+import Updater as updater
+from Devices_Logic import Devices_Main_Logic
+from Results_Logic import Results_Main_Logic
+import json
 
+version = '1.0.00'
 
 #TODO: Figure out some way to deal with repeat names, probably just reject them
 #TODO: Make an option to show all attributes in the attributes window (will take quite a bit of work to ensure proper data allocation)
@@ -36,7 +43,10 @@ class Logic_Main():
 
 
 
-    #This is the parent event handler for anytime the mouse is clicked. All logic is handled elsewheres
+
+
+
+    #This is 5the parent event handler for anytime the mouse is clicked. All logic is handled elsewheres
     def Pressed(self, event):
         #TODO: maybe replace this to get the sender of the signal somehow?
         select_btn  = ui.centralwidget.childAt(event.pos())
@@ -49,7 +59,7 @@ class Logic_Main():
 
     #Handles all of the left click actions in this app
     def Left_Click(self, select_btn):
-        print(select_btn.objectName())
+
         if select_btn.objectName().__contains__("Par"):
             PL.Left_Click(select_btn)
         elif select_btn.objectName().__contains__("Attr"):
@@ -61,17 +71,27 @@ class Logic_Main():
         if select_btn.objectName().__contains__("Par"):
             PL.Right_Click(select_btn, event)
 
-        if select_btn.objectName().__contains__("Attr"):
+        elif select_btn.objectName().__contains__("Attr"):
             AL.Right_Click(select_btn, event)
+
+        elif select_btn.objectName().__contains__("Str"):
+            SL.Right_Click(select_btn, event)
+
+    def Change_Mode(self, mode):
+        ui.Change_Mode(mode)
+        DL.Unload_Devices()
+
+        DL.Load_Devices(BL.devices.info)
+
 
 
 
 
 
     def Menu_Items(self):
-        ui.actionOpen.triggered.connect(lambda: self.Load_Recipe())
-        ui.actionSave.triggered.connect(lambda: rp.Save())
-        ui.actionExport.triggered.connect(lambda: rp.Export())
+
+
+        ui.actionExport.triggered.connect(lambda: BL.Export_Recipe())
         ui.actionImport_Devices.triggered.connect(lambda: BL.Import_Devices())
         ui.actionLoad_Default_Materials.triggered.connect(lambda: SL.Load_Default_Materials())
         ui.actionSave_Default_Materials.triggered.connect(lambda: SL.Save_Default_Materials())
@@ -79,6 +99,11 @@ class Logic_Main():
         ui.actionSave_Structure.triggered.connect(lambda: SL.Save_Structure())
         ui.actionSet_Selected_Device_Structure.triggered.connect(lambda: BL.Set_Selected_Device_Structure())
         ui.actionSave_All_Device_Data.triggered.connect(lambda: BL.Save_All_Device_Data())
+        ui.actionExport_Structure.triggered.connect(lambda: SL.Export_Structure())
+        ui.actionQuick_Analysis.triggered.connect(lambda: BL.Quick_Analysis())
+        ui.actionSync.triggered.connect(lambda: SVL.Sync())
+        ui.actionViewer.triggered.connect(lambda: self.Change_Mode("Viewer"))
+        ui.actionImporter.triggered.connect(lambda: self.Change_Mode("Importer"))
 
 
 
@@ -88,6 +113,14 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('fusion')
     #print(QtWidgets.QStyleFactory().keys())
+
+    init = Initialization_Handler(version)
+    #This is a loop to hold the program until the initializer window is done
+    while not init.Is_Done:
+        pass
+    #Checks for updates from the server, eventually calls through to the Updater_Manager Class
+    init.Check_For_Updates()
+
     ui = Central_UI()
     rp = RM.Recipe_Manager()
     ST = Structure()
@@ -100,9 +133,16 @@ if __name__ == "__main__":
     SL = Structure_Main_Logic(ui, mm, ST)
     dm = Device_Manager(ST)
     BL = Batch_Main_Logic(ui, dm, SL)
+    SVL = Server_Logic(ui, BL)
+    RL = Results_Main_Logic(ui)
+    DL = Devices_Main_Logic(ui, RL)
 
 
 
     runtime = Logic_Main()
+
+
+    """Convenience Stuff"""
+    #BL.Import_Devices(r'C:\Users\Daniel\Documents\College\Georgia Tech\Research\Codes and More\Device Manager\New Codes\2021-10-13 -- TiO2ALD on spiro\2021-10-13 -- TiO2ALD on spiro')
 
     sys.exit(app.exec_())

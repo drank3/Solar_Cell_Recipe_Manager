@@ -1,9 +1,17 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 from UI_Layouts import Layouts
+from Menu_UI import Main_Menus
 import Attributes_UI
 import Parameters_UI
 import Structure_UI
 import Batch_UI
+import Devices_UI
+import Results_UI
+import Info_UI
+import ctypes
+import os
+import json
+
 
 
 
@@ -21,17 +29,30 @@ class Central_UI(object):
     def __init__(self):
         #I kind of understand this super line, its just making sure that QtWidget init is not overridden
         super(QtWidgets.QWidget).__init__()
+        self.mode = "Importer"
 
 
         self.MainWindow = QtWidgets.QMainWindow()
 
         self.setupUi()
-        self.Main_Menus()
+        self.main_menus = Main_Menus(self)
+        self.main_menus.All_Menus_Init()
 
+        #These two lines force the icon in the taskbar to be the one I want, instead of the random python one
+        myappid = u'device_manager' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
+        #This way, the app always starts with the mode being Importer by default
+        self.Change_Mode("Importer")
 
         self.MainWindow.show()
 
+
+
+
+        with open(os.path.dirname(__file__) + r'/System Settings/Settings.txt', 'r') as file:
+            system_settings = json.load(file)
+            self.user = system_settings['Username']
 
 
     def setupUi(self):
@@ -41,11 +62,12 @@ class Central_UI(object):
         self.MainWindow.setObjectName("self.MainWindow")
         self.MainWindow.resize(1100, 700)
         self.MainWindow.setFixedSize(1100, 700)
-        self.MainWindow.move(800, 100)
+        self.MainWindow.resize(1100, 700)
+        self.MainWindow.move(400, 100)
 
 
         #self.MainWindow.showMaximized()
-        self.MainWindow.setWindowTitle("Recipe Manager")
+        self.MainWindow.setWindowTitle("Device Manager")
 
 
         icon = QtGui.QIcon("Icon.png")
@@ -69,13 +91,19 @@ class Central_UI(object):
         self.centralwidget = QtWidgets.QWidget(self.MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
-        Layouts(self)
+        self.layouts = Layouts(self)
+        self.layouts.Resizing(self.MainWindow)
 
+        #These are the windows associated with the Importer mode
         self.AUI = Attributes_UI.Attributes_Window(self.attribute_viewer)
         self.PUI = Parameters_UI.Parameters_Window(self.parameter_viewer)
         self.SUI = Structure_UI.Structure_Window(self.structure_viewer)
         self.BUI = Batch_UI.Batch_Window(self.batch_viewer)
 
+        #These are the windows associated with the Viewer mode
+        self.DUI = Devices_UI.Devices_Window(self.devices_viewer)
+        self.IUI = Info_UI.Info_Window(self.info_viewer)
+        self.RUI = Results_UI.Results_Window(self.results_viewer)
 
 
         self.MainWindow.setCentralWidget(self.centralwidget)
@@ -89,107 +117,67 @@ class Central_UI(object):
         #Creating the first frame (to build up a new recipe)
         self.PUI.Create_Grid(0, "Par", self.parameter_viewer)
 
+        self.main_menus = Main_Menus(self)
+
+    #Just a convenience function to make a dialog message
+    def Show_Dialog(self, top, text, detailed_info=None):
+
+       msg = QtWidgets.QMessageBox()
+       msg.setIcon(QtWidgets.QMessageBox.Information)
+       msg.setText(text)
+       msg.setWindowTitle(top)
+       if detailed_info:
+           msg.setDetailedText("The details are as follows:")
+       msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+
+       return(msg)
+
+    #This function is triggered whenever the modes Importer or Viewer are changed from the menu system
+    #While check the importer, hide the windows not in the selected modes, and make visible those that are
+    def Change_Mode(self, new_mode):
+
+        if new_mode == "Importer":
+            self.mode = new_mode
+
+            #Showing or hiding the associated windows
+            #----------------------------------------
+            self.actionImporter.setChecked(True)
+            self.actionViewer.setChecked(False)
+
+            self.devices_viewer.setVisible(False)
+            self.results_viewer.setVisible(False)
+            self.info_viewer.setVisible(False)
+
+            self.attribute_viewer.setVisible(True)
+            self.parameter_viewer.setVisible(True)
+            self.batch_viewer.setVisible(True)
+            self.structure_viewer.setVisible(True)
+            #---------------------------------------
+
+            #Showing or hiding the relevant menu items
+            self.main_menus.Set_Menus_Mode("Importer")
+
+        if new_mode == "Viewer":
+            self.mode = new_mode
+
+            self.actionViewer.setChecked(True)
+            self.actionImporter.setChecked(False)
 
 
+            self.devices_viewer.setVisible(True)
+            self.results_viewer.setVisible(True)
+            self.info_viewer.setVisible(True)
 
-    def Main_Menus(self):
-        self.menubar = QtWidgets.QMenuBar(self.MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1692, 21))
-        self.menubar.setObjectName("menubar")
-        self.MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(self.MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        self.MainWindow.setStatusBar(self.statusbar)
+            self.attribute_viewer.setVisible(False)
+            self.parameter_viewer.setVisible(False)
+            self.batch_viewer.setVisible(False)
+            self.structure_viewer.setVisible(False)
 
-        """ Stuff for the file menu option"""
-        self.menuFile = QtWidgets.QMenu(self.menubar)
-        self.menuFile.setObjectName("menuFile")
-        self.menuFile.setTitle("File")
-        self.menubar.addAction(self.menuFile.menuAction())
+            #Showing or hiding the relevant menu items
+            self.main_menus.Set_Menus_Mode("Viewer")
 
-        self.actionOpen = QtWidgets.QAction(self.MainWindow)
-        self.actionOpen.setObjectName("actionOpen")
-        self.actionSave = QtWidgets.QAction(self.MainWindow)
-        self.actionSave.setObjectName("actionSave")
-        self.actionExport_to_CSV = QtWidgets.QAction(self.MainWindow)
-        self.actionExport_to_CSV.setObjectName("actionExport_to_CSV")
-        self.actionSave_As = QtWidgets.QAction(self.MainWindow)
-        self.actionSave_As.setObjectName("actionSave_As")
-        self.actionExport = QtWidgets.QAction(self.MainWindow)
-        self.actionExport.setObjectName("actionExport")
-        self.menuFile.addAction(self.actionOpen)
-        self.menuFile.addAction(self.actionSave)
-        self.menuFile.addAction(self.actionSave_As)
-        self.menuFile.addAction(self.actionExport)
+        self.layouts.Resizing(self.MainWindow)
 
-        self.actionExport_to_CSV.setText("Export to CSV")
-        self.actionSave_As.setText("Save As")
-        self.actionExport.setText("Export Recipe")
-        self.actionSave.setText("Save")
-        self.actionOpen.setText("Open")
-
-
-        """Stuff for the View menu option"""
-        self.menuView = QtWidgets.QMenu(self.menubar)
-        self.menuView.setObjectName("menuView")
-        self.menuView.setTitle("View")
-        self.menubar.addAction(self.menuView.menuAction())
-
-
-        """Stuff for the Devices menu option"""
-        self.menuDevices = QtWidgets.QMenu(self.menubar)
-        self.menuDevices.setObjectName("menuDevices")
-        self.menubar.addAction(self.menuDevices.menuAction())
-        self.menuDevices.setTitle("Devices")
-
-        self.actionImport_Devices = QtWidgets.QAction(self.menuDevices)
-        self.actionImport_Devices.setObjectName("actionImport_Devices")
-        self.actionImport_Devices.setText("Import New Devices")
-        self.menuDevices.addAction(self.actionImport_Devices)
-
-        self.actionSave_All_Device_Data = QtWidgets.QAction(self.menuDevices)
-        self.actionSave_All_Device_Data.setObjectName("actionSave_All_Device_Data")
-        self.actionSave_All_Device_Data.setText("Save All Device Data")
-        self.menuDevices.addAction(self.actionSave_All_Device_Data)
-
-        self.actionSet_Selected_Device_Structure = QtWidgets.QAction(self.menuDevices)
-        self.actionSet_Selected_Device_Structure.setObjectName("actionSet_Selected_Device_Structure")
-        self.actionSet_Selected_Device_Structure.setText("Set Selected Device Structure")
-        self.menuDevices.addAction(self.actionSet_Selected_Device_Structure)
-
-
-        """Stuff for the Materials menu option"""
-        self.menuMaterials = QtWidgets.QMenu(self.menubar)
-        self.menuMaterials.setObjectName("menuMaterials")
-        self.menubar.addAction(self.menuMaterials.menuAction())
-        self.menuMaterials.setTitle("Materials")
-
-        self.actionLoad_Default_Materials = QtWidgets.QAction(self.menuMaterials)
-        self.actionLoad_Default_Materials.setObjectName("actionLoad_Default_Materials")
-        self.actionLoad_Default_Materials.setText("Load Default Materials")
-        self.menuMaterials.addAction(self.actionLoad_Default_Materials)
-
-        self.actionSave_Default_Materials = QtWidgets.QAction(self.menuMaterials)
-        self.actionSave_Default_Materials.setObjectName("actionSave_Default_Materials")
-        self.actionSave_Default_Materials.setText("Save Default Materials")
-        self.menuMaterials.addAction(self.actionSave_Default_Materials)
-
-
-        """Stuff for the Structures menu Option"""
-        self.menuStructures = QtWidgets.QMenu(self.menubar)
-        self.menuStructures.setObjectName("menuStructures")
-        self.menubar.addAction(self.menuStructures.menuAction())
-        self.menuStructures.setTitle("Structures")
-
-        self.actionLoad_Structure = QtWidgets.QAction(self.menuStructures)
-        self.actionLoad_Structure.setObjectName("actionLoad_Structure")
-        self.actionLoad_Structure.setText("Load Structure")
-        self.menuStructures.addAction(self.actionLoad_Structure)
-
-        self.actionSave_Structure = QtWidgets.QAction(self.menuStructures)
-        self.actionSave_Structure.setObjectName("actionSave_Structure")
-        self.actionSave_Structure.setText("Save Structure")
-        self.menuStructures.addAction(self.actionSave_Structure)
 
 
 
@@ -203,5 +191,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
 
     nice = Central_UI()
+
 
     sys.exit(app.exec_())

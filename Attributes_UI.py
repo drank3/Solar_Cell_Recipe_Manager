@@ -3,6 +3,7 @@ VHeight = 25
 HSpacer = 25
 Indent = 10
 from PySide2 import QtCore, QtGui, QtWidgets
+import traceback
 
 class Attributes_Window(object):
 
@@ -31,11 +32,12 @@ class Attributes_Window(object):
 
 
     def Insert_Item(self, name, value, type, parent):
+        print(parent)
         attr = QtWidgets.QTreeWidgetItem(parent)
         attr.setText(0, name)
         if type == "Attr":
             attr.setText(1, value)
-            attr.setFlags(QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled)
+            attr.setFlags(QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
         else:
             attr.setFlags(QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsAutoTristate)
 
@@ -54,7 +56,7 @@ class Attributes_Window(object):
             attr.path = [parent.text(0)]
             parent.setExpanded(True)
         elif parent.path:
-            attr.path = parent.path.append(parent.text(0))
+            attr.path = parent.path + [parent.text(0)]
             parent.setExpanded(True)
         return attr
 
@@ -98,7 +100,7 @@ class Attributes_Window(object):
         self.viewer = QtWidgets.QTreeWidget(parent)
         self.viewer.setObjectName("Attr@Viewer")
         self.viewer.setGeometry(QtCore.QRect(0, 0, self.frame.width(), self.frame.height()))
-
+        self.viewer.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.viewer.setFrameShape(QtWidgets.QFrame.Panel)
         self.viewer.setLineWidth(1)
         self.viewer.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -152,14 +154,14 @@ class Attributes_Window(object):
         self.Add_Group.setFont(font)
         self.Add_Group.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
 
-    def Context_Menu(self, location, event):
-        self.menuok = QtWidgets.QMenu(self.attribute_viewer.parent())
-        self.menuok.setObjectName("menuok")
-        self.menuok.setGeometry(QtCore.QRect(0, 0, 25, 21))
-        self.actionDelete = QtWidgets.QAction(self.menuok)
+    def Context_Menu(self, point, parent):
+        print("triggered")
+        menu = QtWidgets.QMenu(parent)
+        menu.setObjectName("menuok")
+        menu.setGeometry(QtCore.QRect(0, 0, 25, 21))
+        self.actionDelete = QtWidgets.QAction(menu)
         self.actionDelete.setObjectName("actionNot_me")
-        self.menuok.addAction(self.actionDelete)
-        self.menuok.setTitle("Attribute Menu")
+        menu.addAction(self.actionDelete)
+        menu.setTitle("Attribute Menu")
         self.actionDelete.setText("Delete")
-        self.actionDelete.trigger = self.attribute_viewer.parent().childAt(event.pos())
-        self.menuok.popup(event.globalPos())
+        menu.popup(point)

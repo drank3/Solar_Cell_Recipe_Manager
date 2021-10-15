@@ -139,7 +139,7 @@ class Info_Manager(object):
         self.structure = structure
 
     def Update_Structure(self, info):
-
+        print("str updated")
         num = self.structure.current_layer_num
         material = self.structure.current_layer_material
         if num and material:
@@ -190,19 +190,19 @@ class Recipe_Manager():
         saved_info.value = saved_info.value
 
 
+    #Creates a new attribute within the saved_dict, with the name, value, and group path specified (directory of attribute groups)
     def Attribute_Init(self, name, value, path):
-
         lastPar = param_path.return_val()[-1]
         if lastPar not in saved_info.value:
             saved_info.value[lastPar] = {'Attributes': {name: value}}
         elif 'Attributes' not in saved_info.value[lastPar]:
-
             saved_info.value[lastPar]['Attributes'] = {name: value}
         else:
             location = self.Find_Attr_Child(saved_info.value[lastPar]['Attributes'], path)
             location[name] = value
         saved_info.value = saved_info.value
 
+    #Does the same thing as attribute_init,
     def Group_Init(self, name, path):
 
 
@@ -314,7 +314,7 @@ class Recipe_Manager():
 
     def Delete_Attribute(self, name, path):
         parameter = param_path.return_val()[-1]
-        location = self.Find_Attr_Child(saved_info[parameter]["Attributes"], path)
+        location = self.Find_Attr_Child(saved_info.value[parameter]["Attributes"], path)
         del location[name]
 
         param_path.value = param_path.value
@@ -325,7 +325,8 @@ class Recipe_Manager():
         else:
             target = original
             for step in path:
-                target = original[step]
+                #As a record of my pain, this next line was once written as original[step] and was breaking everything, hours of debugging to find it...
+                target = target[step]
         return target
 
     def Delete_Parameter(self, name):
