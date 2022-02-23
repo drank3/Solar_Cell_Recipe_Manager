@@ -79,7 +79,6 @@ class Structure_Window(object):
         button.setLineWidth(1)
         button.adjustSize()
         button.setVisible(True)
-        print("herterter")
 
         return button
 

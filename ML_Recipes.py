@@ -244,7 +244,10 @@ if __name__ == "__main__":
     dp.Clean_Data()
     #Max or Average, see function description
     dp.Drop_Bad_Pixels("Max")
+    #dp.target_data = dp.target_data[dp.target_data["Batch Number"] !="Two"]
+    dp.target_data = dp.target_data.drop("Batch Number", axis=1)
     dp.Sort_By_Device()
+    print(dp.target_data)
     dp.Parameter_Encoder()
     train_input, test_input, train_output, test_output = dp.Generate_Sets(.75)
     print("yoyoyoy")

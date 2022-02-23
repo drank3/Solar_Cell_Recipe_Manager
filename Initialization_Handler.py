@@ -3,6 +3,7 @@ from PySide2 import QtWidgets, QtCore, QtGui
 import sys
 import json
 import Updater as updater
+import ctypes, sys
 
 
 parent_dir = os.path.dirname(__file__)
@@ -15,6 +16,9 @@ svl = None
 class Initialization_Handler():
 
     def __init__(self, version):
+
+        self.Ask_Permissions()
+
         settings_exist = os.path.isdir(settings_dir)
         self.version = version
         #This parameter tells whether or not the initializer window has been done or not
@@ -36,8 +40,21 @@ class Initialization_Handler():
 
 
 
+    def Ask_Permissions(self):
+        admin_status = False
+        try:
+            admin_status = True
+        except:
+            print("Is user an admin command failed")
+            return False
 
-
+        if admin_status==True:
+            print(admin_status)
+            return True
+        else:
+        # Re-run the program with admin rights
+            print("howdy partner")
+            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
 
 
 

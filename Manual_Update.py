@@ -1,3 +1,8 @@
+new_version_path = "no"
+old_version_path = "no"
+
+
+
 from PySide2 import QtSql, QtWidgets
 import mysql.connector
 from mysql.connector import Error
@@ -5,7 +10,6 @@ from datetime import datetime
 import pandas as pd
 from PySide2.QtCore import Qt
 import os
-import sys
 
 
 
@@ -38,9 +42,10 @@ class Update_Manager():
         try:
             connection = mysql.connector.connect(
                 host='170.187.158.29',
-                user='remote_user',
-                passwd='eml-lab293461',
-
+                #user='remote_user',
+                #passwd='eml-lab293461',
+                user='dranke',
+                passwd='Ryl.14.Buin.547',
                 database = 'Updates'
             )
             self.connection_status = True
@@ -86,7 +91,6 @@ class Update_Manager():
 
                     if (build_major==latest_major):
                         self.Run_Update_Actions(required_update_ids)
-                        sys.exit()
                     else:
                         #TODO: Make a GUI for large updates
                         print("Too much updating hassle")
@@ -102,6 +106,8 @@ class Update_Manager():
     def Run_Update_Actions(self, action_ids):
         try:
             for id in action_ids:
+                print(id)
+
                 cursor = self.connection.cursor()
                 query = f"SELECT Version, Action, File, Old_Path, New_Path  FROM Update_Actions WHERE ID = {id}"
                 cursor.execute(query)
@@ -170,3 +176,23 @@ class Update_Manager():
             return version
         except Exception as e:
             print(f"Setting the new version number failed with error {e}")
+
+
+
+
+if __name__ == "__main__":
+    um = Update_Manager("1.0.00")
+
+
+
+    cursor = um.connection.cursor()
+
+    #SQL doesn't like apostrophes in data, so  need to double them up wherever they are
+    path = r"/Trial_Update_Text.txt"
+    file= "Should be some text here"
+    file = ' '.join(format(ord(i), '08b') for i in file)
+    query_add = f"INSERT INTO Update_Actions(ID, Version, Action, File, Old_Path, New_Path) VALUES(16, '1.0.01','Create' ,'{file}', '{path}', '{path}');"
+
+    cursor.execute(query_add)
+    um.connection.commit()
+    cursor.close()
